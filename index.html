@@ -1,109 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Boeing 777 Sliding Puzzle</title>
-<style>
-  body { text-align: center; background: #fffaf0; font-family: Arial; }
-  canvas { border: 3px solid #d2691e; margin-top: 20px; cursor: pointer; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Access Portal</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<h2>Boeing 777 Sliding Puzzle – Rebuild the Fleet </h2>
-<p>Click tiles adjacent to empty space to slide them!</p>
-<canvas id="puzzle" width="450" height="450"></canvas>
+  <div class="container">
+    <h2>Enter Access Key 🔒</h2>
+    <input type="password" id="password" placeholder="Enter password">
+    <button id="submitBtn">Enter</button>
+  </div>
 
-<script>
-const img = new Image();
-img.src = "https://imgs.search.brave.com/625wwkCLUpsU4034KkZ_5vURU2yU3G3GRiTSj-aNn7k/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/YXJhYmlhbmJ1c2lu/ZXNzLmNvbS93cC1j/b250ZW50L3VwbG9h/ZHMvc2l0ZXMvMy9j/bG91ZC8yMDIxLzA5/LzE2LzFmb0VDQ1dk/LUVtaWlyYXRlcy1B/aXJsaW5lLUJvZWlu/Zy03NzctMzAwRVJf/MS0zLTgwMHg2MDAu/anBn"
-const canvas = document.getElementById('puzzle');
-const ctx = canvas.getContext('2d');
+  <script>
+    const passwordInput = document.getElementById('password');
+    const submitBtn = document.getElementById('submitBtn');
 
-const rows = 3, cols = 3, size = 150;
-// Empty tile index corresponds to R3C1 = (row 2, col 0) = index 6 (0-based)
-const emptyIndex = 6;
+    async function checkPassword() {
+      const password = passwordInput.value;
 
-let tiles = [];
+      try {
+        const response = await fetch('/checkPassword', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
 
-img.onload = () => {
-  // Initialize tiles 0..8 except emptyIndex
-  for (let i = 0; i < rows * cols; i++) {
-    if (i !== emptyIndex) tiles.push(i);
-    else tiles.push(null); // Represent empty tile with null
-  }
-  shuffleBoard();
-  draw();
-};
+        const result = await response.json();
 
-function shuffleBoard() {
-  // Shuffle only the tiles except the empty tile position fixed at emptyIndex
-  let tilePositions = tiles.filter(t => t !== null);
-  for (let i = tilePositions.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [tilePositions[i], tilePositions[j]] = [tilePositions[j], tilePositions[i]];
-  }
-  // Place shuffled tiles back except emptyIndex reserved
-  let pos = 0;
-  for (let i = 0; i < tiles.length; i++) {
-    if (i !== emptyIndex) {
-      tiles[i] = tilePositions[pos];
-      pos++;
+        if (result.success) {
+          window.location.href = '/secret.html';
+        } else {
+          alert(result.message);
+        }
+      } catch (err) {
+        alert('Server error. Try again.');
+      }
     }
-  }
-}
 
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  for (let i = 0; i < tiles.length; i++) {
-    if (tiles[i] === null) {
-      // Empty tile - fill white background
-      let dx = (i % cols) * size;
-      let dy = Math.floor(i / cols) * size;
-      ctx.fillStyle = '#fffaf0';
-      ctx.fillRect(dx, dy, size, size);
-      continue;
-    }
-    let sx = (tiles[i] % cols) * size;
-    let sy = Math.floor(tiles[i] / cols) * size;
-    let dx = (i % cols) * size;
-    let dy = Math.floor(i / cols) * size;
-    ctx.drawImage(img, sx, sy, size, size, dx, dy, size, size);
-  }
-}
+    submitBtn.addEventListener('click', checkPassword);
 
-canvas.addEventListener('click', e => {
-  const rect = canvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-
-  const clickedIndex = Math.floor(y / size) * cols + Math.floor(x / size);
-  const emptyPos = tiles.indexOf(null);
-
-  // Check if clicked tile is adjacent to empty tile
-  const canMove = (
-    (clickedIndex === emptyPos - 1 && clickedIndex % cols !== cols - 1) || // Left 
-    (clickedIndex === emptyPos + 1 && clickedIndex % cols !== 0) || // Right
-    (clickedIndex === emptyPos - cols) || // Above
-    (clickedIndex === emptyPos + cols) // Below
-  );
-
-  if (canMove) {
-    // Move tile into empty slot
-    tiles[emptyPos] = tiles[clickedIndex];
-    tiles[clickedIndex] = null;
-    draw();
-    // Optional: checkCompletion();
-  }
-});
-
-// Optional: function to check if puzzle is solved
-function checkCompletion() {
-  for (let i = 0; i < tiles.length; i++) {
-    if (tiles[i] !== null && tiles[i] !== i) return false;
-  }
-  alert("Puzzle completed! 🎉");
-  return true;
-}
-</script>
+    passwordInput.addEventListener('keydown', function(event) {
+      if (event.key === 'Enter') {
+        checkPassword();
+      }
+    });
+  </script>
 </body>
 </html>
