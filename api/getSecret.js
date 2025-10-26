@@ -1,3 +1,4 @@
 export default function handler(req, res) {
-  res.status(200).json({ success: true, message: "FLEET" });
+  const secret = "FLEET";
+  res.status(200).json({ success: true, secret });
 }
